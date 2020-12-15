@@ -251,6 +251,16 @@ public class CoreWorkload extends Workload {
   public static final String READMODIFYWRITE_PROPORTION_PROPERTY_DEFAULT = "0.0";
 
   /**
+   * The name of the property for the proportion of transactions that are delete.
+   */
+  public static final String DELETE_PROPORTION_PROPERTY = "deleteproportion";
+
+  /**
+   * The default proportion of transactions that are delete.
+   */
+  public static final String DELETE_PROPORTION_PROPERTY_DEFAULT = "0.0";
+
+  /**
    * The name of the property for the the distribution of requests across the keyspace. Options are
    * "uniform", "zipfian" and "latest"
    */
@@ -669,6 +679,9 @@ public class CoreWorkload extends Workload {
     case "INSERT":
       doTransactionInsert(db);
       break;
+    case "DELETE":
+      doTransactionDelete(db);
+      break;
     case "SCAN":
       doTransactionScan(db);
       break;
@@ -848,6 +861,18 @@ public class CoreWorkload extends Workload {
     }
   }
 
+  public void doTransactionDelete(DB db) {
+    // choose the next key
+    long keynum = nextKeynum();
+
+    try {
+      String dbkey = CoreWorkload.buildKeyName(keynum, zeropadding, orderedinserts);
+      db.delete(table, dbkey);
+    } finally {
+        // Update the keyspace
+    }
+  }
+
   /**
    * Creates a weighted discrete values with database operations for a workload to perform.
    * Weights/proportions are read from the properties list and defaults are used
@@ -872,6 +897,8 @@ public class CoreWorkload extends Workload {
         p.getProperty(SCAN_PROPORTION_PROPERTY, SCAN_PROPORTION_PROPERTY_DEFAULT));
     final double readmodifywriteproportion = Double.parseDouble(p.getProperty(
         READMODIFYWRITE_PROPORTION_PROPERTY, READMODIFYWRITE_PROPORTION_PROPERTY_DEFAULT));
+    final double deleteproportion = Double.parseDouble(p.getProperty(
+        DELETE_PROPORTION_PROPERTY, DELETE_PROPORTION_PROPERTY_DEFAULT));
 
     final DiscreteGenerator operationchooser = new DiscreteGenerator();
     if (readproportion > 0) {
@@ -888,6 +915,10 @@ public class CoreWorkload extends Workload {
 
     if (scanproportion > 0) {
       operationchooser.addValue(scanproportion, "SCAN");
+    }
+
+    if (deleteproportion > 0) {
+      operationchooser.addValue(deleteproportion, "DELETE");
     }
 
     if (readmodifywriteproportion > 0) {

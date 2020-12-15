@@ -115,6 +115,7 @@ public class ClientThread implements Runnable {
     }
     try {
       if (dotransactions) {
+        System.err.println("Avinash: Trace 2 : Starting Transaction");
         long startTimeNanos = System.nanoTime();
 
         while (((opcount == 0) || (opsdone < opcount)) && !workload.isStopRequested()) {
